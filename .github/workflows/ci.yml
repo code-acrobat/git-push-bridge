@@ -1,0 +1,20 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: checks
+        run: |
+          node --check git-push-bridge.mjs
+          node git-push-bridge.mjs --selftest
+          bash -n git-push-bridge.sh
