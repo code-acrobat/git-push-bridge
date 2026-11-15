@@ -3,7 +3,7 @@
 set -u
 SELF=git-push-bridge.mjs
 PORT=3721
-LOG=/tmp/opencode/git-push-bridge.log
+LOG=${XDG_STATE_HOME:-$HOME/.local/state}/git-push-bridge/git-push-bridge.log
 
 # match the proxy process only: argv[0] ends in `node` (mise shim execs the
 # real binary path), argv[1] is exactly this script; a shell running

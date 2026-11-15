@@ -66,7 +66,7 @@ git push
 
 ```sh
 cp git-push-bridge.mjs git-push-bridge.sh ~/.local/bin/
-git-push-bridge.sh up      # nohup; log /tmp/opencode/git-push-bridge.log
+git-push-bridge.sh up      # nohup; log ~/.local/state/git-push-bridge/git-push-bridge.log
 git-push-bridge.sh status  # up (pid N), port 3721: 200
 ```
 
@@ -152,8 +152,9 @@ login wrote it there).
 ```sh
 # one instance per forge — port must differ from the github one
 export TOKEN_CMD="printf 'protocol=https\nhost=gitlab.com\n\n' | git credential fill | sed -n 's/^password=//p'"
+mkdir -p ~/.local/state/git-push-bridge
 nohup env PORT=3722 TARGET=gitlab.com BASIC_USER=oauth2 TOKEN_CMD="$TOKEN_CMD" \
-  node ~/.local/bin/git-push-bridge.mjs >/tmp/opencode/gitlab-bridge.log 2>&1 &
+  node ~/.local/bin/git-push-bridge.mjs >~/.local/state/git-push-bridge/gitlab-bridge.log 2>&1 &
 
 git -C <repo> config --local url."http://127.0.0.1:3722/".pushInsteadOf https://gitlab.com/
 git push origin main
