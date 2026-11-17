@@ -39,11 +39,10 @@ curl -s -o /dev/null -w '%{http_code}\n' \
 # no tools — the client stays plain git pointed at loopback by the rewrite.
 ```
 
-- Target is a sandbox (omac): do the two extra steps in README
-  *Sandboxes* — `open_port: [3721]` + the three exact `GIT_CONFIG_COUNT` /
-  `GIT_CONFIG_KEY_0` / `GIT_CONFIG_VALUE_0` names in `allow_vars` of
-  `~/.config/omac/sandbox-profiles/default.json`, pass the three
-  `GIT_CONFIG_*` exports to the session. Never pass the token itself.
+- Target is a sandbox: two extra steps, described in README *Sandboxes* —
+  grant outbound access to the bridge port, and pass the three `GIT_CONFIG_*`
+  variables into the session through the sandbox's env allowlist. Never pass
+  the token itself.
 - GitLab or a second forge: separate instance on another port, see README
   *Example: GitLab*.
 - Something wrong: `status` first (WSL drops closed loopback ports, so git
