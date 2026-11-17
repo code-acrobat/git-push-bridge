@@ -2,7 +2,7 @@
 // git smart-HTTP -> loopback push bridge. The client only ever sees
 // http://127.0.0.1:<PORT>/ (url.*.pushInsteadOf); the token is fetched on the
 // host per request and injected here, so it never reaches the client.
-// Defaults = GitHub via `gh`; for GitLab: TARGET=gitlab.com BASIC_USER=oauth2
+// Defaults = GitHub via `gh`; GitLab: TARGET=gitlab.com BASIC_USER=oauth2; Bitbucket DC: see README
 // and a TOKEN_CMD that prints the token (see README.md).
 // DENY_REFS='refs/heads/main' refuses pushes naming those refs with 403
 // before any token lookup or upstream contact (agents route through here,

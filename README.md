@@ -3,9 +3,10 @@
 A loopback git **push** bridge: plain `git push` gets a credential it must never
 see. One node file, no dependencies, token fetched on the host per request.
 
-Works for **either GitHub or GitLab** — defaults are GitHub, the knobs in
-*Knobs* retarget it (the GitLab example below). Other forges and any further
-magic: point your own agent at the Knobs table; this stays a two-file PoC.
+Works for **GitHub, GitLab and Bitbucket** — defaults are GitHub, the knobs in
+*Knobs* retarget it (the GitLab and Bitbucket examples below). Any forge that
+speaks git smart-HTTP behind a token works the same way; this stays a
+two-file PoC.
 
 ## The problem
 
@@ -165,6 +166,48 @@ Notes: `BASIC_USER=oauth2` is GitLab's documented username for OAuth tokens
 (your own username also works). Against a repo you may not push, GitLab
 answers `403 You are not allowed to push code to this project` with valid
 creds vs `401` with bad ones.
+
+## Example: Bitbucket (Data Center / Server)
+
+Same bridge, its own instance and port. Bitbucket serves git over HTTP under
+`/scm/<PROJECT>/<repo>.git` and accepts a **personal access token** (or an HTTP
+access token) as the Basic password, with **your own username**:
+
+```sh
+export TARGET=bitbucket.example.com BASIC_USER="$USER"
+export TOKEN_CMD='printf %s "$BITBUCKET_TOKEN"'   # any command printing the token
+mkdir -p ~/.local/state/git-push-bridge
+nohup env PORT=3722 TARGET BASIC_USER TOKEN_CMD \
+  node ~/.local/bin/git-push-bridge.mjs \
+  >~/.local/state/git-push-bridge/bitbucket-bridge.log 2>&1 &
+```
+
+The rewrite has to carry the `/scm` segment itself — `pushInsteadOf` replaces a
+prefix, it cannot insert one mid-path — so point the prefix at
+`http://127.0.0.1:3722/scm/`:
+
+```sh
+# ssh remote (scp-like remotes work too: git@bitbucket.example.com:PROJECT/repo.git)
+git -C <repo> config --local \
+  url."http://127.0.0.1:3722/scm/".pushInsteadOf ssh://git@bitbucket.example.com:122/
+# …or an https remote
+git -C <repo> config --local \
+  url."http://127.0.0.1:3722/scm/".pushInsteadOf https://bitbucket.example.com/
+```
+
+Check auth without pushing anything (401 = wrong username/token pair or no push
+permission, 502 = `TOKEN_CMD` failed):
+
+```sh
+curl -s -o /dev/null -w '%{http_code}\n' \
+  'http://127.0.0.1:3722/scm/<PROJECT>/<repo>.git/info/refs?service=git-receive-pack'
+```
+
+Notes: the bridge dials `TARGET` on **443** — a DC on another HTTPS port needs
+that line changed in `git-push-bridge.mjs`. A private CA is the usual
+`NODE_EXTRA_CA_CERTS=/path/to/ca.pem`. `BASIC_USER` must be a real username the
+token belongs to; a generic name is rejected. Keep `DENY_REFS` on for the
+default branches, as with the other forges.
 
 ## Knobs
 
