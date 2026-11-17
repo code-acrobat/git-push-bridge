@@ -51,7 +51,8 @@ function parseCommands(buf) {
     if (len < 4) return false
     const end = i + len
     if (end > buf.length) return null // incomplete pkt-line, wait for more
-    const line = buf.toString("utf8", i + 4, end).replace(/\n$/, "")
+    // git puts the capability list after a NUL on the same line: keep the command only.
+    const line = buf.toString("utf8", i + 4, end).replace(/\n$/, "").split("\0")[0]
     if (line.startsWith("refname=")) refs.push(line.slice(8).trim())
     else {
       const f = line.split(" ")
@@ -157,6 +158,10 @@ if (process.argv.includes("--selftest")) {
     ["refs/heads/a", "refs/heads/main"], "two updates")
   eq(parseCommands(Buffer.concat([pkt("refname=refs/heads/main\n"), flush])),
     ["refs/heads/main"], "refname= form")
+  eq(parseCommands(Buffer.concat([pkt(`${oid1} ${oid2} refs/heads/main\u0000 report-status side-band-64k\n`), flush])),
+    ["refs/heads/main"], "v0 create with a capability list")
+  eq(parseCommands(Buffer.concat([pkt("refname=refs/heads/main\u0000 report-status\n"), flush])),
+    ["refs/heads/main"], "refname= with a capability list")
   eq(parseCommands(Buffer.from("zzzz")), false, "malformed header")
   eq(parseCommands(pkt("garbage\n")), null, "non-pkt garbage without flush")
   const d = makeDenier("refs/heads/main, refs/heads/release-*")
