@@ -244,23 +244,16 @@ The whole point: the bridge lives on the host, the sandbox only needs to
 *reach* the loopback port and *receive* the URL rewrite. The token itself
 never crosses that boundary — `TOKEN_CMD` runs host-side in the bridge.
 
-**omac** — sandbox network/env policy lives in the machine-global file
-`~/.config/omac/sandbox-profiles/default.json` (not in any profile's config):
+**A sandbox that filters env and network** grants the same two things in its own
+profile — outbound access to the bridge port, and the rewrite variables passed
+into the session:
 
-```json
-{
-  "open_port": [3719, 3721],
-  "environment": {
-    "allow_vars": ["GIT_CONFIG_COUNT", "GIT_CONFIG_KEY_0", "GIT_CONFIG_VALUE_0"]
-  }
-}
-```
-
-- `open_port: [3721]` lets the sandbox talk to the bridge;
-  `allow_vars` passes exactly the three rewrite vars in — exact names, not
-  a `GIT_CONFIG_*` wildcard, so nothing else from the host env can ride
-  along (add `GIT_CONFIG_KEY_1` / `_VALUE_1` if you ever need a second
-  rewrite slot):
+- **the port** (`3721` here) is what lets the sandbox reach the bridge;
+- **the rewrite** travels as environment: `GIT_CONFIG_COUNT`,
+  `GIT_CONFIG_KEY_0`, `GIT_CONFIG_VALUE_0`. Prefer those three exact names over
+  a `GIT_CONFIG_KEY_*` / `GIT_CONFIG_VALUE_*` prefix — a prefix works too (useful
+  when several rewrite slots are needed) but it widens what a launcher may hand
+  into the sandbox:
 
 ```sh
 export GIT_CONFIG_COUNT=1
@@ -268,8 +261,8 @@ export GIT_CONFIG_KEY_0='url.http://127.0.0.1:3721/.pushInsteadOf'
 export GIT_CONFIG_VALUE_0='https://github.com/'
 ```
 
-- The sandboxed `git config` stays untouched (omac grants repo config
-  read-only), the token stays host-side, and only push is redirected.
+- The sandboxed `git config` stays untouched, the token stays host-side, and
+  only push is redirected.
 
 Any other sandboxed setup needs the same two things: outbound access to
 `127.0.0.1:3721` and the rewrite passed via environment.
